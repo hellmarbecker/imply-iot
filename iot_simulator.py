@@ -1,22 +1,25 @@
 import yaml
+import json
+import time
 import argparse, sys, logging
 import requests
 
 
 def getToken(token_url, client_id, client_secret):
 
+    token = None
     payload = {
         'client_id': client_id,
         'client_secret': client_secret,
         'grant_type': 'client_credentials'
-    }  
-    print(payload)
+    } 
+    logging.debug(f'token request payload: {payload}')
     r = requests.post(token_url, data=payload)
-    print(r.url)
-    print(r.status_code)
-    print(r.text)
+    logging.debug(f'status code: {r.status_code}')
+    logging.debug(f'response: {r.text}')
+    if r.status_code == 200:
+        token = json.loads(r.text)
 
-    token = None
     return token
 
 # Check configuration
@@ -82,9 +85,20 @@ def main():
 
     # main loop goes here
 
-    myToken = authenticate(polarisConf['token_url'], polarisConf['client_id'], polarisConf['client_secret'])
+    myToken = None
 
-
+    while True:
+        
+        if myToken is None:
+            logging.info('getting new Token')
+            myToken = getToken(polarisConf['token_url'], polarisConf['client_id'], polarisConf['client_secret'])
+            logging.debug(f'returned Token: {myToken}')
+            timeToken = time.time()
+            timeExpiry = timeToken + myToken['expires_in']
+            logging.info(f'token obtained at {timeToken}, expires at {timeExpiry}')
+        else:
+            pass
+        break
 
 if __name__ == "__main__":
     main()
