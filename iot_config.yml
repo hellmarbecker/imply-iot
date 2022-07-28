@@ -1,0 +1,6 @@
+IncludeOptional:
+    - iot_secret.yml
+General:
+    minSleep: 0.00001
+    maxSleep: 0.00004
+

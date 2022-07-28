@@ -1,5 +1,30 @@
 import yaml
 import argparse, sys, logging
+import requests
+
+
+def getToken(token_url, client_id, client_secret):
+
+    payload = {
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'grant_type': 'client_credentials'
+    }  
+    print(payload)
+    r = requests.post(token_url, data=payload)
+    print(r.url)
+    print(r.status_code)
+    print(r.text)
+
+    token = None
+    return token
+
+# Check configuration
+
+def checkConfig(cfg):
+
+    # Raise an exception if anything is wrong with the configuration
+    pass
 
 # Read configuration
 
@@ -56,6 +81,10 @@ def main():
         maxSleep = 0.04
 
     # main loop goes here
+
+    myToken = authenticate(polarisConf['token_url'], polarisConf['client_id'], polarisConf['client_secret'])
+
+
 
 if __name__ == "__main__":
     main()
