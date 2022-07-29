@@ -22,6 +22,11 @@ def getToken(token_url, client_id, client_secret):
 
     return token
 
+def sendEvent(event_url, table_id, bearer_token, e):
+
+    r = requests.post( ... )
+    return r
+
 # Check configuration
 
 def checkConfig(cfg):
@@ -83,10 +88,9 @@ def main():
     if maxSleep is None:
         maxSleep = 0.04
 
-    # main loop goes here
-
+    # main loop
+    
     myToken = None
-
     while True:
         
         if myToken is None:
@@ -96,9 +100,26 @@ def main():
             timeToken = time.time()
             timeExpiry = timeToken + myToken['expires_in']
             logging.info(f'token obtained at {timeToken}, expires at {timeExpiry}')
-        else:
-            pass
-        break
+
+        dataRec = {
+            "__time": time.time() * 1000.0,
+            "var": "a", 
+            "val": 1.0
+        }
+
+        response = sendEvent(
+            polarisConf['eventURL'],
+            polarisConf['tableID'],
+            myToken['access_token']
+            dataRec
+        )
+        if response.status_code != 200:
+        
+            if response.status_code == 401 && 'token expired' in response.text:
+                logging.info('token expired, resetting token')
+            else:
+                logging.error(f'sendEvent returned status {response.status_code} with message {response.text}')
+             
 
 if __name__ == "__main__":
     main()
