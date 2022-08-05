@@ -2,6 +2,7 @@
 """a simple data generator that sends to a Kafka broker"""
 import sys
 import json
+import yaml
 import time
 import random
 from confluent_kafka import Producer
@@ -92,7 +93,8 @@ def generate(producer, topic, asset_0, asset_1, interval_ms, inject_error, devmo
 
                 #GENERIC: publish the data
                 if devmode:
-                    print(json.dumps(data, indent=4), flush=True)
+                    # print(json.dumps(data, indent=4), flush=True)
+                    print(json.dumps(data), flush=True)
                 else:
                     producer.produce(topic, key=data[asset_0_label+"_id"], value=json.dumps(data))
                     producer.poll(0)
@@ -108,7 +110,7 @@ def main(config_path,inject_error):
     """main entry point, load and validate config and call generate"""
     try:
         with open(config_path) as handle:
-            config = json.load(handle)
+            config = yaml.load(handle)
 
             #prepare metrics configurations
             misc_config = config.get("misc", {})

@@ -24,7 +24,7 @@ def getToken(token_url, client_id, client_secret):
 
 def sendEvent(event_url, table_id, bearer_token, e):
 
-    r = requests.post( ... )
+#    r = requests.post( ... )
     return r
 
 # Check configuration
@@ -110,12 +110,12 @@ def main():
         response = sendEvent(
             polarisConf['eventURL'],
             polarisConf['tableID'],
-            myToken['access_token']
+            myToken['access_token'],
             dataRec
         )
         if response.status_code != 200:
         
-            if response.status_code == 401 && 'token expired' in response.text:
+            if response.status_code == 401 and 'token expired' in response.text:
                 logging.info('token expired, resetting token')
             else:
                 logging.error(f'sendEvent returned status {response.status_code} with message {response.text}')
