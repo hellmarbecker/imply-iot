@@ -6,7 +6,30 @@ import yaml
 import time
 import random
 from confluent_kafka import Producer
-import socket
+import logging
+
+def checkConfig(cfg):
+
+    # Raise an exception if anything is wrong with the configuration
+    pass
+
+# Read configuration
+
+def readConfig(ifn):
+    logging.debug(f'reading config file {ifn}')
+    with open(ifn, 'r') as f:
+        cfg = yaml.load(f, Loader=yaml.FullLoader)
+        # get include files if present
+        for inc in cfg.get("IncludeOptional", []):
+            try:
+                logging.debug(f'reading include file {inc}')
+                cfg.update(yaml.load(open(inc), Loader=yaml.FullLoader))
+            except FileNotFoundError:
+                logging.debug(f'optional include file {inc} not found, continuing')
+        logging.debug(f'Configuration: {cfg}')
+        checkConfig(cfg)
+        return cfg
+
 
 def generate(producer, topic, asset_0, asset_1, interval_ms, inject_error, devmode):
     """generate data and send it to a Kafka broker"""
@@ -108,33 +131,36 @@ def generate(producer, topic, asset_0, asset_1, interval_ms, inject_error, devmo
 
 def main(config_path,inject_error):
     """main entry point, load and validate config and call generate"""
+
+    logLevel = logging.DEBUG
+    logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=logLevel)
+
     try:
-        with open(config_path) as handle:
-            config = yaml.load(handle)
+        config = readConfig(config_path)
 
-            #prepare metrics configurations
-            misc_config = config.get("misc", {})
-            interval_ms = misc_config.get("interval_ms", 500)
-            devmode = misc_config.get("devmode", False)
+        #prepare metrics configurations
+        misc_config = config.get("misc", {})
+        interval_ms = misc_config.get("interval_ms", 500)
+        devmode = misc_config.get("devmode", False)
 
-            #prepare assets
-            asset_0 = config.get("asset_0",{})
-            asset_1 = config.get("asset_1",{})
-            
+        #prepare assets
+        asset_0 = config.get("asset_0",{})
+        asset_1 = config.get("asset_1",{})
+        
 
-            if devmode:
-                producer = 'null'
-                topic = 'null'
-            else:    
-                #prepare Kafka connection
-                kafka_config = config.get("kafka", {})
-                brokers = kafka_config.get("brokers", "localhost:9092")
-                topic = kafka_config.get("topic", "simulator")
-                kafkaconf = {'bootstrap.servers': brokers,'client.id': socket.gethostname()}
-                producer = Producer(kafkaconf)
+        if devmode:
+            producer = 'null'
+            topic = 'null'
+        else:    
+            #prepare Kafka connection
+            kafka_config = config.get("kafka", {})
+            brokers = kafka_config.get("brokers", "localhost:9092")
+            topic = kafka_config.get("topic", "simulator")
+            kafkaconf = {'bootstrap.servers': brokers,'client.id': socket.gethostname()}
+            producer = Producer(kafkaconf)
 
-            #Start simulation
-            generate(producer, topic, asset_0, asset_1, interval_ms, inject_error, devmode)
+        #Start simulation
+        generate(producer, topic, asset_0, asset_1, interval_ms, inject_error, devmode)
 
     except IOError as error:
         print("Error opening config file '%s'" % config_path, error)
