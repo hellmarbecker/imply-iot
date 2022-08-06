@@ -6,7 +6,9 @@ import yaml
 import time
 import random
 from confluent_kafka import Producer
+import argparse
 import logging
+
 
 def checkConfig(cfg):
 
@@ -129,14 +131,36 @@ def generate(producer, topic, asset_0, asset_1, interval_ms, inject_error, devmo
         
 
 
-def main(config_path,inject_error):
+def main():
     """main entry point, load and validate config and call generate"""
 
-    logLevel = logging.DEBUG
+    logLevel = logging.INFO
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--debug', help='Enable debug logging', action='store_true')
+    parser.add_argument('-q', '--quiet', help='Quiet mode (overrides Debug mode)', action='store_true')
+    parser.add_argument('-f', '--config', help='Configuration file for session state machine(s)', required=True)
+    parser.add_argument('-m', '--mode', help='Mode for session state machine(s)', default='default')
+    parser.add_argument('-n', '--dry-run', help='Write to stdout instead of Kafka',  action='store_true')
+    args = parser.parse_args()
+
+    if args.debug:
+        logLevel = logging.DEBUG
+    if args.quiet:
+        logLevel = logging.ERROR
+
+    if args.mode == 'default':
+        inject_error = 'false'
+    else:
+        inject_error = 'true'
+
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=logLevel)
 
+    logging.debug(f'args: {args}')
+
+    cfgfile = args.config
+
     try:
-        config = readConfig(config_path)
+        config = readConfig(cfgfile)
 
         #prepare metrics configurations
         misc_config = config.get("misc", {})
@@ -163,10 +187,7 @@ def main(config_path,inject_error):
         generate(producer, topic, asset_0, asset_1, interval_ms, inject_error, devmode)
 
     except IOError as error:
-        print("Error opening config file '%s'" % config_path, error)
+        print("Error opening config file '%s'" % cfgfile, error)
 
 if __name__ == '__main__':
-    if len(sys.argv) == 3:
-        main(sys.argv[1],sys.argv[2])
-    else:
-        print("usage %s config.json plant_id yield_ratio" % sys.argv[0])
+    main()
