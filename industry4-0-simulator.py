@@ -33,7 +33,7 @@ def readConfig(ifn):
         return cfg
 
 
-def generate(producer, topic, asset_0, asset_1, interval_ms, inject_error, devmode):
+def generate(asset_0, asset_1, interval_ms, inject_error, emit):
     """generate data and send it to a Kafka broker"""
 
     interval_secs = interval_ms / 1000.0
@@ -117,18 +117,31 @@ def generate(producer, topic, asset_0, asset_1, interval_ms, inject_error, devmo
                 # -> end of abnormal behavior
 
                 #GENERIC: publish the data
-                if devmode:
-                    # print(json.dumps(data, indent=4), flush=True)
-                    print(json.dumps(data), flush=True)
-                else:
-                    producer.produce(topic, key=data[asset_0_label+"_id"], value=json.dumps(data))
-                    producer.poll(0)
+                emit(data[asset_0_label+"_id"], json.dumps(data))
 
         time.sleep(interval_secs)
         if (iteration == 10):
             iteration = 0
 
         
+def kafkaEmitFunc(config):
+
+    kafka_config = config.get("kafka", {})
+    brokers = kafka_config.get("brokers", "localhost:9092")
+    topic = kafka_config.get("topic", "simulator")
+    kafkaconf = {'bootstrap.servers': brokers,'client.id': socket.gethostname()}
+    producer = Producer(kafkaconf)
+
+    def emitFunc(k, v):
+        producer.produce(topic, key=k, value=v)
+        producer.poll(0)
+
+    return emitFunc
+
+
+def stdoutEmitFunc(config):
+
+    return lambda k, v : print(v, flush=True)
 
 
 def main():
@@ -173,18 +186,12 @@ def main():
         
 
         if devmode:
-            producer = 'null'
-            topic = 'null'
+            emit = stdoutEmitFunc(config)
         else:    
-            #prepare Kafka connection
-            kafka_config = config.get("kafka", {})
-            brokers = kafka_config.get("brokers", "localhost:9092")
-            topic = kafka_config.get("topic", "simulator")
-            kafkaconf = {'bootstrap.servers': brokers,'client.id': socket.gethostname()}
-            producer = Producer(kafkaconf)
+            emit = kafkaFunc(config)
 
         #Start simulation
-        generate(producer, topic, asset_0, asset_1, interval_ms, inject_error, devmode)
+        generate(asset_0, asset_1, interval_ms, inject_error, emit)
 
     except IOError as error:
         print("Error opening config file '%s'" % cfgfile, error)
