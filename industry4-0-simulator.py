@@ -9,6 +9,7 @@ from confluent_kafka import Producer
 import socket
 import argparse
 import logging
+import requests
 
 
 def checkConfig(cfg):
@@ -118,13 +119,61 @@ def generate(asset_0, asset_1, interval_ms, inject_error, emit):
                 # -> end of abnormal behavior
 
                 #GENERIC: publish the data
-                emit(data[asset_0_label+"_id"], json.dumps(data))
+                k = data[asset_0_label+"_id"]
+                v = json.dumps(data)
+                logging.debug(f'before emit, value={v}')
+                emit(k, v)
 
         time.sleep(interval_secs)
         if (iteration == 10):
             iteration = 0
 
+
+def getToken(token_url, client_id, client_secret):
+
+    token = None
+    payload = {
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'grant_type': 'client_credentials'
+    }
+    logging.debug(f'token request payload: {payload}')
+    r = requests.post(token_url, data=payload)
+    logging.debug(f'status code: {r.status_code}')
+    logging.debug(f'response: {r.text}')
+    if r.status_code == 200:
+        token = json.loads(r.text)
+
+    return token
+
         
+def polarisEmitFunc(config):
+
+    myToken = None
+    polarisConf = config['Polaris']
+    if myToken is None:
+        logging.info('getting new Token')
+        myToken = getToken(polarisConf['token_url'], polarisConf['client_id'], polarisConf['client_secret'])
+        logging.debug(f'returned Token: {myToken}')
+        timeToken = time.time()
+        timeExpiry = timeToken + myToken['expires_in']
+        logging.info(f'token obtained at {timeToken}, expires at {timeExpiry}')
+    myTokenString = myToken['access_token']
+
+    def emitFunc(k, v):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {myTokenString}'
+        }
+        logging.debug(f'headers={headers}')
+        r = requests.post(polarisConf['table_url'], headers=headers, data=v, allow_redirects=False)
+        logging.debug(f'request headers: {r.request.headers}')
+        logging.debug(f'request body: {r.request.body}')
+        logging.debug(f'status code: {r.status_code}')
+        logging.debug(f'response: {r.text}')
+
+    return emitFunc
+
 def kafkaEmitFunc(config):
 
     kafkaconf = config['Kafka']

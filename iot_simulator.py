@@ -81,12 +81,12 @@ def main():
         # use HTTP endpoint
         polarisConf = config['Polaris']
 
-    minSleep = config['General']['minSleep']
-    if minSleep is None:
-        minSleep = 0.01
-    maxSleep = config['General']['maxSleep']
-    if maxSleep is None:
-        maxSleep = 0.04
+    #minSleep = config['General']['minSleep']
+    #if minSleep is None:
+    #    minSleep = 0.01
+    #maxSleep = config['General']['maxSleep']
+    #if maxSleep is None:
+    #    maxSleep = 0.04
 
     # main loop
     
@@ -107,18 +107,18 @@ def main():
             "val": 1.0
         }
 
-        response = sendEvent(
-            polarisConf['eventURL'],
-            polarisConf['tableID'],
-            myToken['access_token'],
-            dataRec
-        )
-        if response.status_code != 200:
-        
-            if response.status_code == 401 and 'token expired' in response.text:
-                logging.info('token expired, resetting token')
-            else:
-                logging.error(f'sendEvent returned status {response.status_code} with message {response.text}')
+#        response = sendEvent(
+#            polarisConf['eventURL'],
+#            polarisConf['tableID'],
+#            myToken['access_token'],
+#            dataRec
+#        )
+#        if response.status_code != 200:
+#        
+#            if response.status_code == 401 and 'token expired' in response.text:
+#                logging.info('token expired, resetting token')
+#            else:
+#                logging.error(f'sendEvent returned status {response.status_code} with message {response.text}')
              
 
 if __name__ == "__main__":
