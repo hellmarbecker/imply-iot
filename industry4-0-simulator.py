@@ -166,7 +166,7 @@ def polarisEmitFunc(config):
             'Authorization': f'Bearer {myTokenString}'
         }
         logging.debug(f'headers={headers}')
-        r = requests.post(polarisConf['table_url'], headers=headers, data=v, allow_redirects=False)
+        r = requests.post(polarisConf['table_url'], headers=headers, data=v+"\n", allow_redirects=False)
         logging.debug(f'request headers: {r.request.headers}')
         logging.debug(f'request body: {r.request.body}')
         logging.debug(f'status code: {r.status_code}')
