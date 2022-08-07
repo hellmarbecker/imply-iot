@@ -6,6 +6,7 @@ import yaml
 import time
 import random
 from confluent_kafka import Producer
+import socket
 import argparse
 import logging
 
@@ -126,10 +127,12 @@ def generate(asset_0, asset_1, interval_ms, inject_error, emit):
         
 def kafkaEmitFunc(config):
 
-    kafka_config = config.get("kafka", {})
-    brokers = kafka_config.get("brokers", "localhost:9092")
-    topic = kafka_config.get("topic", "simulator")
-    kafkaconf = {'bootstrap.servers': brokers,'client.id': socket.gethostname()}
+    kafkaconf = config['Kafka']
+    topic = kafkaconf.get("topic", "simulator")
+    # remove the topic so the rest can go into the producer properties directly
+    del kafkaconf['topic']
+    kafkaconf['client.id'] = socket.gethostname()
+    brokers = kafkaconf.get("bootstrap.servers", "localhost:9092")
     producer = Producer(kafkaconf)
 
     def emitFunc(k, v):
@@ -150,10 +153,12 @@ def main():
     logLevel = logging.INFO
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--debug', help='Enable debug logging', action='store_true')
-    parser.add_argument('-q', '--quiet', help='Quiet mode (overrides Debug mode)', action='store_true')
     parser.add_argument('-f', '--config', help='Configuration file for session state machine(s)', required=True)
+    parser.add_argument('-k', '--kafka', help='Write to Kafka',  action='store_true')
     parser.add_argument('-m', '--mode', help='Mode for session state machine(s)', default='default')
     parser.add_argument('-n', '--dry-run', help='Write to stdout instead of Kafka',  action='store_true')
+    parser.add_argument('-p', '--polaris', help='Write to Polaris API',  action='store_true')
+    parser.add_argument('-q', '--quiet', help='Quiet mode (overrides Debug mode)', action='store_true')
     args = parser.parse_args()
 
     if args.debug:
@@ -185,10 +190,15 @@ def main():
         asset_1 = config.get("asset_1",{})
         
 
-        if devmode:
+        if args.dry_run:
             emit = stdoutEmitFunc(config)
-        else:    
-            emit = kafkaFunc(config)
+        elif args.kafka:
+            emit = kafkaEmitFunc(config)
+        elif args.polaris:
+            emit = polarisEmitFunc(config)
+        else:
+            # no option => fall back to stdout
+            emit = stdoutEmitFunc(config)
 
         #Start simulation
         generate(asset_0, asset_1, interval_ms, inject_error, emit)
