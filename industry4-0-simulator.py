@@ -223,10 +223,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--debug', help='Enable debug logging', action='store_true')
     parser.add_argument('-f', '--config', help='Configuration file for session state machine(s)', required=True)
-    parser.add_argument('-k', '--kafka', help='Write to Kafka',  action='store_true')
+    parser.add_argument('-k', '--kafka', help='Write to Kafka', action='store_true')
     parser.add_argument('-m', '--mode', help='Mode for session state machine(s)', default='default')
-    parser.add_argument('-n', '--dry-run', help='Write to stdout instead of Kafka',  action='store_true')
-    parser.add_argument('-p', '--polaris', help='Write to Polaris API',  action='store_true')
+    parser.add_argument('-n', '--dry-run', help='Write to stdout instead of Kafka', action='store_true')
+    parser.add_argument('-p', '--polaris', help='Write to Polaris API', action='store_true')
     parser.add_argument('-q', '--quiet', help='Quiet mode (overrides Debug mode)', action='store_true')
     args = parser.parse_args()
 
