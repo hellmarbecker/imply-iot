@@ -125,9 +125,11 @@ def generate(asset_0, asset_1, interval_ms, inject_error, emit):
                 logging.debug(f'before emit, value={v}')
                 batch.append((k, v))
 
-        emit(batch)
+        msecs_spent = emit(batch)
+        secs_left = interval_secs - msecs_spent / 1000.0
+        if secs_left > 0.0:
+            time.sleep(secs_left)
 
-        time.sleep(interval_secs)
         if (iteration == 10):
             iteration = 0
 
@@ -178,6 +180,7 @@ def polarisEmitFunc(config):
         logging.debug(f'request body: {r.request.body}')
         logging.info(f'request took {dt_msec} msecs. status code: {r.status_code}')
         logging.debug(f'response: {r.text}')
+        return dt_msec
 
     return emitFunc
 
@@ -193,9 +196,12 @@ def kafkaEmitFunc(config):
     producer = Producer(kafkaconf)
 
     def emitFunc(batch):
+        t1 = time.time()
         for (k, v) in batch:
             producer.produce(topic, key=k, value=v)
             producer.poll(0)
+        dt_msec = 1000.0 * (time.time() - t1)
+        return dt_msec
 
     return emitFunc
 
@@ -205,6 +211,7 @@ def stdoutEmitFunc(config):
     def emitFunc(batch):
         for (k, v) in batch:
             print(v, flush=True)
+        return 0.0
 
     return emitFunc
 
