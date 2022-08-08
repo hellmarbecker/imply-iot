@@ -30,7 +30,7 @@ def readConfig(ifn):
                 cfg.update(yaml.load(open(inc), Loader=yaml.FullLoader))
             except FileNotFoundError:
                 logging.debug(f'optional include file {inc} not found, continuing')
-        logging.debug(f'Configuration: {cfg}')
+        logging.info(f'Configuration: {cfg}')
         checkConfig(cfg)
         return cfg
 
@@ -140,10 +140,10 @@ def getToken(token_url, client_id, client_secret):
         'client_secret': client_secret,
         'grant_type': 'client_credentials'
     }
-    logging.debug(f'token request payload: {payload}')
+    logging.info(f'token request payload: {payload}')
     r = requests.post(token_url, data=payload)
-    logging.debug(f'status code: {r.status_code}')
-    logging.debug(f'response: {r.text}')
+    logging.info(f'status code: {r.status_code}')
+    logging.info(f'response: {r.text}')
     if r.status_code == 200:
         token = json.loads(r.text)
 
@@ -157,7 +157,7 @@ def polarisEmitFunc(config):
     if myToken is None:
         logging.info('getting new Token')
         myToken = getToken(polarisConf['token_url'], polarisConf['client_id'], polarisConf['client_secret'])
-        logging.debug(f'returned Token: {myToken}')
+        logging.info(f'returned Token: {myToken}')
         timeToken = time.time()
         timeExpiry = timeToken + myToken['expires_in']
         logging.info(f'token obtained at {timeToken}, expires at {timeExpiry}')
@@ -171,10 +171,12 @@ def polarisEmitFunc(config):
         logging.debug(f'headers={headers}')
 
         body = "".join([ v+"\n" for (k, v) in batch ])
+        t1 = time.time()
         r = requests.post(polarisConf['table_url'], headers=headers, data=body, allow_redirects=False)
+        dt_msec = 1000.0 * (time.time() - t1)
         logging.debug(f'request headers: {r.request.headers}')
         logging.debug(f'request body: {r.request.body}')
-        logging.debug(f'status code: {r.status_code}')
+        logging.info(f'request took {dt_msec} msecs. status code: {r.status_code}')
         logging.debug(f'response: {r.text}')
 
     return emitFunc
