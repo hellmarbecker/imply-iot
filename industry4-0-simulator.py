@@ -63,6 +63,7 @@ def generate(asset_0, asset_1, interval_ms, inject_error, emit):
     while True:
         iteration = iteration+1
 
+        batch = []
         data = {
             "__time": int(time.time()*1000)
         }
@@ -122,7 +123,9 @@ def generate(asset_0, asset_1, interval_ms, inject_error, emit):
                 k = data[asset_0_label+"_id"]
                 v = json.dumps(data)
                 logging.debug(f'before emit, value={v}')
-                emit(k, v)
+                batch.append((k, v))
+
+        emit(batch)
 
         time.sleep(interval_secs)
         if (iteration == 10):
@@ -160,19 +163,22 @@ def polarisEmitFunc(config):
         logging.info(f'token obtained at {timeToken}, expires at {timeExpiry}')
     myTokenString = myToken['access_token']
 
-    def emitFunc(k, v):
+    def emitFunc(batch):
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {myTokenString}'
         }
         logging.debug(f'headers={headers}')
-        r = requests.post(polarisConf['table_url'], headers=headers, data=v+"\n", allow_redirects=False)
+
+        body = "".join([ v+"\n" for (k, v) in batch ])
+        r = requests.post(polarisConf['table_url'], headers=headers, data=body, allow_redirects=False)
         logging.debug(f'request headers: {r.request.headers}')
         logging.debug(f'request body: {r.request.body}')
         logging.debug(f'status code: {r.status_code}')
         logging.debug(f'response: {r.text}')
 
     return emitFunc
+
 
 def kafkaEmitFunc(config):
 
@@ -184,16 +190,21 @@ def kafkaEmitFunc(config):
     brokers = kafkaconf.get("bootstrap.servers", "localhost:9092")
     producer = Producer(kafkaconf)
 
-    def emitFunc(k, v):
-        producer.produce(topic, key=k, value=v)
-        producer.poll(0)
+    def emitFunc(batch):
+        for (k, v) in batch:
+            producer.produce(topic, key=k, value=v)
+            producer.poll(0)
 
     return emitFunc
 
 
 def stdoutEmitFunc(config):
 
-    return lambda k, v : print(v, flush=True)
+    def emitFunc(batch):
+        for (k, v) in batch:
+            print(v, flush=True)
+
+    return emitFunc
 
 
 def main():
