@@ -93,28 +93,6 @@ start_abnormal() {
     fi
 }
 
-#kill_cmd() {
-#    SIGNAL=""; MSG="Killing "
-#    while true
-#    do
-#        LIST=`ps -ef | grep -v grep | grep $CMD | grep -w $USR | awk '{print $2}'`
-#        if [ "$LIST" ]
-#        then
-#            echo; echo "$MSG $LIST" ; echo
-#            echo $LIST | xargs kill $SIGNAL
-#            sleep 2
-#            SIGNAL="-9" ; MSG="Killing $SIGNAL"
-#            if [ -f $PID ]
-#            then
-#                /bin/rm $PID
-#            fi
-#        else
-#           echo; echo "All killed..." ; echo
-#           break
-#        fi
-#    done
-#}
-
 stop() {
     echo "==== Stop"
 
@@ -172,8 +150,8 @@ while getopts ${OPTSTRING} arg; do
 done
 shift $((OPTIND -1))
 
-COMMAND_NORMAL="python3 $BASE/$CMD $FLAGS -f $BASE/$CONFIG -m default"
-COMMAND_ABNORMAL="python3 $BASE/$CMD $FLAGS -f $BASE/$CONFIG -m special"
+COMMAND_NORMAL="python3 $BASE/$CMD $FLAGS -f $BASE/$CONFIG -m default -p"
+COMMAND_ABNORMAL="python3 $BASE/$CMD $FLAGS -f $BASE/$CONFIG -m special -p"
 # echo $COMMAND_NORMAL
 # echo "$1"
 # exit 1
