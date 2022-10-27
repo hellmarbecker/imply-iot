@@ -150,8 +150,8 @@ while getopts ${OPTSTRING} arg; do
 done
 shift $((OPTIND -1))
 
-COMMAND_NORMAL="python3 $BASE/$CMD $FLAGS -f $BASE/$CONFIG -m default -p"
-COMMAND_ABNORMAL="python3 $BASE/$CMD $FLAGS -f $BASE/$CONFIG -m special -p"
+COMMAND_NORMAL="python3 $BASE/$CMD $FLAGS -f $BASE/$CONFIG -m default -k"
+COMMAND_ABNORMAL="python3 $BASE/$CMD $FLAGS -f $BASE/$CONFIG -m special -k"
 # echo $COMMAND_NORMAL
 # echo "$1"
 # exit 1
