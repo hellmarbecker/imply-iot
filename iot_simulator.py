@@ -253,8 +253,6 @@ def main():
     try:
         config = readConfig(cfgfile)
 
-        sys.exit(0)
-
         #prepare metrics configurations
         misc_config = config.get("misc", {})
         interval_ms = misc_config.get("interval_ms", 500)
