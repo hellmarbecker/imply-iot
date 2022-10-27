@@ -10,6 +10,7 @@ import socket
 import argparse
 import logging
 import requests
+from mergedeep import merge
 
 
 def checkConfig(cfg):
@@ -23,13 +24,16 @@ def readConfig(ifn):
     logging.debug(f'reading config file {ifn}')
     with open(ifn, 'r') as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
+        includecfgs = []
         # get include files if present
         for inc in cfg.get("IncludeOptional", []):
             try:
                 logging.debug(f'reading include file {inc}')
-                cfg.update(yaml.load(open(inc), Loader=yaml.FullLoader))
+                c = yaml.load(open(inc), Loader=yaml.FullLoader)
+                includecfgs.append(c)
             except FileNotFoundError:
                 logging.debug(f'optional include file {inc} not found, continuing')
+        merge(cfg, *includecfgs)
         logging.info(f'Configuration: {cfg}')
         checkConfig(cfg)
         return cfg
@@ -248,6 +252,8 @@ def main():
 
     try:
         config = readConfig(cfgfile)
+
+        sys.exit(0)
 
         #prepare metrics configurations
         misc_config = config.get("misc", {})

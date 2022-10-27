@@ -2,7 +2,7 @@ IncludeOptional:
     - iot_secret.yml
 Kafka:
     bootstrap.servers: "localhost:9092"
-    topic: "plants-streams"
+    topic: "imply-iot"
 "misc": {
     "interval_ms": 1000,
     "devmode": true,
